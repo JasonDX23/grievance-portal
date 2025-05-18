@@ -1,4 +1,6 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
+
 st.set_page_config(initial_sidebar_state="collapsed")
 no_sidebar_style = """
     <style>
@@ -6,12 +8,14 @@ no_sidebar_style = """
     </style>
 """
 st.markdown(no_sidebar_style, unsafe_allow_html=True)
-
-from streamlit_gsheets import GSheetsConnection
 from datetime import datetime
 import pandas as pd
 from google import genai
 from google.genai import types
+
+import telebot
+BOT_TOKEN = st.secrets['BOT_TOKEN']
+bot = telebot.TeleBot(BOT_TOKEN)
 
 api_key = st.secrets["GEMINI_API_KEY"]
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -22,24 +26,24 @@ if 'submitted' not in st.session_state:
 if 'show_message' not in st.session_state:
     st.session_state['show_message'] = False
 
-def submit_value(title, bothering_message, option):
-    existing_df = conn.read(worksheet='Sheet1',
-                            usecols=[0, 1, 2, 3])
-    current_datetime = datetime.now()
-    new_data = pd.DataFrame([{
-        "Title": title,
-        "What's on your mind?": bothering_message,
-        'Current Mood': option,
-        "Date": current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-    }])
+# def submit_value(title, bothering_message, option):
+#     existing_df = conn.read(worksheet='Sheet1',
+#                             usecols=[0, 1, 2, 3])
+#     current_datetime = datetime.now()
+#     new_data = pd.DataFrame([{
+#         "Title": title,
+#         "What's on your mind?": bothering_message,
+#         'Current Mood': option,
+#         "Date": current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+#     }])
 
-    updated_df = pd.concat([existing_df, new_data], ignore_index=True)
-    updated_df["Date"] = pd.to_datetime(updated_df["Date"], errors='coerce')
-    updated_df = updated_df.sort_values(by="Date", ascending=False)
-    conn.update(worksheet='Sheet1', data=updated_df)
+#     updated_df = pd.concat([existing_df, new_data], ignore_index=True)
+#     updated_df["Date"] = pd.to_datetime(updated_df["Date"], errors='coerce')
+#     updated_df = updated_df.sort_values(by="Date", ascending=False)
+#     conn.update(worksheet='Sheet1', data=updated_df)
 
-    st.session_state['submitted'] = True
-    st.success("Entry submitted successfully!")
+#     st.session_state['submitted'] = True
+#     st.success("Entry submitted successfully!")
 
 st.title('Grievance Portal')
 
@@ -49,7 +53,10 @@ option = st.selectbox('Choose your current mood', ('😀','🥰', '😡', '🥺'
 
 if title and bothering_message and option:
     if st.button(label='Submit'):
-        submit_value(title, bothering_message, option)
+        st.session_state['submitted'] = True
+        message = f"📬 *New Submission Received:*\n\n*Title:* {title}\n*Message:* {bothering_message}\n*Option:* {option}"
+        bot.send_message(chat_id='t.me/Grievance_port_bot', text=message, parse_mode='Markdown')
+
 
 if st.session_state['submitted']:
     if st.button(label='Collect your special message'):
