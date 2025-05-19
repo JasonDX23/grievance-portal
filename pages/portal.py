@@ -1,10 +1,10 @@
 import google.genai
+import google.genai.types
 import streamlit as st
 import pandas as pd
 import sqlite3
 from datetime import datetime
 import google
-from google.genai import types
 
 # --- Database Setup ---
 DB_NAME = "grievances.db"
@@ -76,7 +76,7 @@ if st.session_state['show_message']:
     client = google.genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model='gemini-2.0-flash',
-        config=types.GenerateContentConfig(
+        config=google.genai.types.GenerateContentConfig(
             system_instruction="You are a supportive friend. You will write sweet and kind messages to the user who is grieving or troubled. Do not call her honey"
         ),
         contents=bothering_message
