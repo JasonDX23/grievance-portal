@@ -1,5 +1,3 @@
-import google.genai
-import google.genai.types
 import streamlit as st
 import pandas as pd
 import sqlite3
