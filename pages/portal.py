@@ -83,4 +83,4 @@ if st.session_state['show_message']:
 
 # --- View Past Entries ---
 if st.button(label='Proceed'):
-    st.switch_page('pages/portal.py')
+    st.switch_page('pages/ending.py')
