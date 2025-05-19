@@ -8,8 +8,6 @@ no_sidebar_style = """
 st.markdown(no_sidebar_style, unsafe_allow_html=True)
 
 
-from streamlit_gsheets import GSheetsConnection
-
 st.title('Grievance Portal')
 st.markdown('As requested, you can submit your grievances for my viewing pleasure')
 
