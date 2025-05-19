@@ -1,24 +1,27 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import gspread
+from google.oauth2.service_account import Credentials
+scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+]
+skey = st.secrets['gcp_service_account']
+credentials = Credentials.from_service_account_info(
+    skey,
+    scopes=scopes,
+)
 
-st.set_page_config(initial_sidebar_state="collapsed")
-no_sidebar_style = """
-    <style>
-        div[data-testid="stSidebarNav"] {display: none;}
-    </style>
-"""
-st.markdown(no_sidebar_style, unsafe_allow_html=True)
+client1 = gspread.authorize(credentials)
+
 from datetime import datetime
 import pandas as pd
 from google import genai
 from google.genai import types
 
-import telebot
-BOT_TOKEN = st.secrets['BOT_TOKEN']
-bot = telebot.TeleBot(BOT_TOKEN)
 
 api_key = st.secrets["GEMINI_API_KEY"]
-conn = st.connection("gsheets", type=GSheetsConnection)
+
+sht = client1.open_by_url('https://docs.google.com/spreadsheets/d/1sBZaGwnssN4tLbuyYYoYFWrvDw0wG2VNDCXoLS_8tGk/edit?usp=sharing')
+worksheet = sht.worksheet('Sheet1')
 
 # Initialize session state to track submission
 if 'submitted' not in st.session_state:
@@ -27,8 +30,7 @@ if 'show_message' not in st.session_state:
     st.session_state['show_message'] = False
 
 def submit_value(title, bothering_message, option):
-    existing_df = conn.read(worksheet='Sheet1',
-                            usecols=[0, 1, 2, 3])
+    existing_df = pd.DataFrame(worksheet.get_all_records())
     current_datetime = datetime.now()
     new_data = pd.DataFrame([{
         "Title": title,
@@ -40,7 +42,8 @@ def submit_value(title, bothering_message, option):
     updated_df = pd.concat([existing_df, new_data], ignore_index=True)
     updated_df["Date"] = pd.to_datetime(updated_df["Date"], errors='coerce')
     updated_df = updated_df.sort_values(by="Date", ascending=False)
-    conn.update(worksheet='Sheet1', data=updated_df)
+    data = [updated_df.columns.tolist()] + updated_df.astype(str).values.tolist()
+    worksheet.update('A1', data)
 
     st.session_state['submitted'] = True
     st.success("Entry submitted successfully!")

@@ -1,20 +1,26 @@
 import streamlit as st
-st.set_page_config(initial_sidebar_state="collapsed")
-no_sidebar_style = """
-    <style>
-        div[data-testid="stSidebarNav"] {display: none;}
-    </style>
-"""
-st.markdown(no_sidebar_style, unsafe_allow_html=True)
+import gspread
+import pandas as pd
 
 st.title('Thank you')
 st.write('Your grievance has been sent to Jason. He will take a look at it aaram se')
-from streamlit_gsheets import GSheetsConnection
-conn = st.connection("gsheets", type=GSheetsConnection)
+from google.oauth2.service_account import Credentials
+scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+]
+skey = st.secrets['gcp_service_account']
+credentials = Credentials.from_service_account_info(
+    skey,
+    scopes=scopes,
+)
+
+client1 = gspread.authorize(credentials)
+sht = client1.open_by_url('https://docs.google.com/spreadsheets/d/1sBZaGwnssN4tLbuyYYoYFWrvDw0wG2VNDCXoLS_8tGk/edit?usp=sharing')
+worksheet = sht.worksheet('Sheet1')
 
 if st.button(label='View your past entries'):
-    existing_df = conn.read(worksheet='Sheet1', usecols=[0, 1, 2, 3])
+    existing_df = pd.DataFrame(worksheet.get_all_records())
     st.dataframe(existing_df)
 
-if st.button(label='New Entry'):
+if st.button(label='Make a New Entry'):
     st.switch_page('pages/portal.py')
